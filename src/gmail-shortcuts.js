@@ -2,7 +2,7 @@
 // @name         Gmail Keyboard Shortcuts
 // @namespace    http://tampermonkey.net/
 // @version      1.0
-// @description  Delete single Gmail email using the Delete key
+// @description  Gmail keyboard shortcuts: Delete key to delete email, Right arrow to move to next email, Left arrow to move to previous email
 // @author       You
 // @match        https://mail.google.com/*
 // @match        https://mail.google.com/mail/*
@@ -42,6 +42,24 @@
     }, 2000);
   }
 
+  function clickButton(button) {
+    if (!button) {
+      return false;
+    }
+
+    try {
+      ["mouseover", "mousedown", "mouseup", "click"].forEach((eventType) => {
+        button.dispatchEvent(
+          new MouseEvent(eventType, { bubbles: true, cancelable: true })
+        );
+      });
+      return true;
+    } catch (error) {
+      log("Error clicking button:", error);
+      return false;
+    }
+  }
+
   function findDeleteButton() {
     // Common Gmail delete button selectors
     const selectors = [
@@ -49,6 +67,40 @@
       '[data-tooltip="Delete"]',
       '.T-I[act="10"]',
       'div[act="10"]',
+    ];
+
+    for (const selector of selectors) {
+      const button = document.querySelector(selector);
+      if (button && button.offsetParent !== null) {
+        return button;
+      }
+    }
+    return null;
+  }
+
+  function findOlderButton() {
+    // Gmail "Older" button selectors (next email)
+    const selectors = [
+      '[aria-label="Older"]',
+      '[data-tooltip="Older"]',
+      'div[role="button"][aria-label="Older"]',
+    ];
+
+    for (const selector of selectors) {
+      const button = document.querySelector(selector);
+      if (button && button.offsetParent !== null) {
+        return button;
+      }
+    }
+    return null;
+  }
+
+  function findNewerButton() {
+    // Gmail "Newer" button selectors (previous email)
+    const selectors = [
+      '[aria-label="Newer"]',
+      '[data-tooltip="Newer"]',
+      'div[role="button"][aria-label="Newer"]',
     ];
 
     for (const selector of selectors) {
@@ -68,28 +120,71 @@
       return;
     }
 
-    try {
-      ["mouseover", "mousedown", "mouseup", "click"].forEach((eventType) => {
-        deleteButton.dispatchEvent(
-          new MouseEvent(eventType, { bubbles: true, cancelable: true })
-        );
-      });
+    const success = clickButton(deleteButton);
+    if (success) {
       showNotification("Email deleted!");
       log("Email deleted successfully");
-    } catch (error) {
-      log("Error deleting email:", error);
+    } else {
       showNotification("Failed to delete email");
     }
   }
 
+  function moveToNextEmail() {
+    const olderButton = findOlderButton();
+
+    if (!olderButton) {
+      showNotification("Next email button not found");
+      return;
+    }
+
+    const success = clickButton(olderButton);
+    if (success) {
+      showNotification("Moved to next email");
+      log("Moved to next email successfully");
+    } else {
+      showNotification("Failed to move to next email");
+    }
+  }
+
+  function moveToPreviousEmail() {
+    const newerButton = findNewerButton();
+
+    if (!newerButton) {
+      showNotification("Previous email button not found");
+      return;
+    }
+
+    const success = clickButton(newerButton);
+    if (success) {
+      showNotification("Moved to previous email");
+      log("Moved to previous email successfully");
+    } else {
+      showNotification("Failed to move to previous email");
+    }
+  }
+
   function handleKeyDown(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
     // Delete key (keyCode 46)
     if (event.keyCode === 46) {
-      event.preventDefault();
-      event.stopPropagation();
-
       log("Delete shortcut triggered");
       deleteSingleEmail();
+      return;
+    }
+
+    // Right arrow key (keyCode 39) - Move to next email
+    if (event.keyCode === 39) {
+      log("Right arrow shortcut triggered");
+      moveToNextEmail();
+      return;
+    }
+
+    // Left arrow key (keyCode 37) - Move to previous email
+    if (event.keyCode === 37) {
+      log("Left arrow shortcut triggered");
+      moveToPreviousEmail();
     }
   }
 
