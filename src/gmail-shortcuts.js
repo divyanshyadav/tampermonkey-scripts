@@ -12,15 +12,33 @@
 (function () {
   "use strict";
 
+  const NOTIFICATION_HIDE_TIME = 1000; // Time in milliseconds before notification starts fading out
+
   function log(message) {
     console.log("[Gmail Delete Script]:", message);
+  }
+
+  // Track active notifications for stacking
+  const activeNotifications = [];
+
+  function updateNotificationPositions() {
+    const spacing = 10; // Space between notifications
+    const baseBottom = 20; // Base bottom position
+
+    activeNotifications.forEach((notification, index) => {
+      if (notification.parentNode) {
+        const notificationHeight = notification.offsetHeight || 50; // Approximate height if not yet rendered
+        const bottom = baseBottom + index * (notificationHeight + spacing);
+        notification.style.bottom = `${bottom}px`;
+      }
+    });
   }
 
   function showNotification(message) {
     const notification = document.createElement("div");
     notification.style.cssText = `
             position: fixed;
-            top: 20px;
+            bottom: 20px;
             right: 20px;
             background: #4CAF50;
             color: white;
@@ -30,16 +48,33 @@
             font-size: 14px;
             z-index: 10000;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: opacity 0.3s ease;
         `;
     notification.textContent = message;
 
     document.body.appendChild(notification);
+    activeNotifications.push(notification);
+
+    // Update positions after notification is rendered
+    setTimeout(() => {
+      updateNotificationPositions();
+    }, 0);
 
     setTimeout(() => {
       if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
+        notification.style.opacity = "0";
+        setTimeout(() => {
+          const index = activeNotifications.indexOf(notification);
+          if (index > -1) {
+            activeNotifications.splice(index, 1);
+          }
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+          updateNotificationPositions();
+        }, 300);
       }
-    }, 2000);
+    }, NOTIFICATION_HIDE_TIME);
   }
 
   function clickButton(button) {
