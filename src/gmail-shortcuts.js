@@ -2,7 +2,7 @@
 // @name         Gmail Keyboard Shortcuts
 // @namespace    http://tampermonkey.net/
 // @version      1.0
-// @description  Gmail keyboard shortcuts: Delete key to delete email, Right arrow to move to next email, Left arrow to move to previous email
+// @description  Gmail keyboard shortcuts: Delete key to delete email, Right arrow to move to next email, Left arrow to move to previous email, 'a' key to archive email
 // @author       You
 // @match        https://mail.google.com/*
 // @match        https://mail.google.com/mail/*
@@ -112,6 +112,24 @@
     return null;
   }
 
+  function findArchiveButton() {
+    // Gmail Archive button selectors
+    const selectors = [
+      '[aria-label="Archive"]',
+      '[data-tooltip="Archive"]',
+      '.T-I[act="7"]',
+      'div[act="7"]',
+    ];
+
+    for (const selector of selectors) {
+      const button = document.querySelector(selector);
+      if (button && button.offsetParent !== null) {
+        return button;
+      }
+    }
+    return null;
+  }
+
   function deleteSingleEmail() {
     const deleteButton = findDeleteButton();
 
@@ -163,6 +181,23 @@
     }
   }
 
+  function archiveEmail() {
+    const archiveButton = findArchiveButton();
+
+    if (!archiveButton) {
+      showNotification("Archive button not found");
+      return;
+    }
+
+    const success = clickButton(archiveButton);
+    if (success) {
+      showNotification("Email archived!");
+      log("Email archived successfully");
+    } else {
+      showNotification("Failed to archive email");
+    }
+  }
+
   function handleKeyDown(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -185,6 +220,19 @@
     if (event.keyCode === 37) {
       log("Left arrow shortcut triggered");
       moveToPreviousEmail();
+      return;
+    }
+
+    // 'a' key (keyCode 65) - Archive email
+    if (
+      event.keyCode === 65 &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      !event.altKey
+    ) {
+      log("Archive shortcut triggered");
+      archiveEmail();
     }
   }
 
