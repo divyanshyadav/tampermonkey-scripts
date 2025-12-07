@@ -234,9 +234,6 @@
   }
 
   function handleKeyDown(event) {
-    event.preventDefault();
-    event.stopPropagation();
-
     // Delete key (keyCode 46)
     if (event.keyCode === 46) {
       log("Delete shortcut triggered");
@@ -258,17 +255,17 @@
       return;
     }
 
-    // 'a' key (keyCode 65) - Archive email
-    if (
-      event.keyCode === 65 &&
-      !event.ctrlKey &&
-      !event.metaKey &&
-      !event.shiftKey &&
-      !event.altKey
-    ) {
-      log("Archive shortcut triggered");
-      archiveEmail();
-    }
+    // // 'a' key (keyCode 65) - Archive email
+    // if (
+    //   event.keyCode === 65 &&
+    //   !event.ctrlKey &&
+    //   !event.metaKey &&
+    //   !event.shiftKey &&
+    //   !event.altKey
+    // ) {
+    //   log("Archive shortcut triggered");
+    //   archiveEmail();
+    // }
   }
 
   function initialize() {
